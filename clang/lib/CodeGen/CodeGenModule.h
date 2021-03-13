@@ -1017,6 +1017,9 @@ public:
   /// Emit code for a single top level declaration.
   void EmitTopLevelDecl(Decl *D);
 
+  // Emit exception thunk. If unnecessary, returns nullptr.
+  llvm::Constant *EmitExceptionThunk(GlobalDecl GD, llvm::Constant *Callee);
+
   /// Stored a deferred empty coverage mapping for an unused
   /// and thus uninstrumented top level declaration.
   void AddDeferredUnusedCoverageMapping(Decl *D);
@@ -1195,6 +1198,15 @@ public:
   void EmitExternalDeclaration(const VarDecl *D);
 
   void EmitVTable(CXXRecordDecl *Class);
+
+  /// Add a deterministic exception type RTTI definition
+  /// to be emitted at the end of the module
+  void EmitZCExceptionRTTIDefinition(const char* DeclName, DeclContext* DC, SourceLocation SL);
+
+  /// Add a deterministic exception base class table RTTI definition
+  /// to be emitted at the end of the module
+  void EmitZCExceptionRTTIBasesDefinition(const char* DeclName, const char** BaseDeclNames,
+                                          size_t BaseCount, DeclContext* DC, SourceLocation SL);
 
   void RefreshTypeCacheForClass(const CXXRecordDecl *Class);
 

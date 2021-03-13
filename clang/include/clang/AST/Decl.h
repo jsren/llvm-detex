@@ -1553,6 +1553,9 @@ public:
 
     /// Other implicit parameter
     Other,
+
+    // Parameter for C++ deterministic execption state
+    CXXExcept,
   };
 
   /// Create implicit parameter.

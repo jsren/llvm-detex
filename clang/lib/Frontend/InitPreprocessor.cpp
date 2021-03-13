@@ -9,6 +9,9 @@
 // This file implements the clang::InitializePreprocessor function.
 //
 //===----------------------------------------------------------------------===//
+extern "C" {
+#include <unistd.h>
+}
 
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/MacroBuilder.h"
@@ -22,6 +25,7 @@
 #include "clang/Lex/HeaderSearch.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Lex/PreprocessorOptions.h"
+#include "clang/Lex/HeaderSearchOptions.h"
 #include "clang/Serialization/ASTReader.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/IR/DataLayout.h"
@@ -1203,6 +1207,13 @@ void clang::InitializePreprocessor(
   // any -include directives.
   for (unsigned i = 0, e = InitOpts.MacroIncludes.size(); i != e; ++i)
     AddImplicitIncludeMacros(Builder, InitOpts.MacroIncludes[i]);
+
+  // Add implicit header for C++ deterministic exceptions
+  if (LangOpts.DetExceptions) {
+    std::string Loc = PP.getHeaderSearchInfo().getHeaderSearchOpts().ResourceDir;
+    Loc += "/include/detexcept.hpp";
+    AddImplicitInclude(Builder, Loc);
+  }
 
   // Process -include-pch/-include-pth directives.
   if (!InitOpts.ImplicitPCHInclude.empty())

@@ -194,6 +194,13 @@ arrangeLLVMFunctionInfo(CodeGenTypes &CGT, bool instanceMethod,
 const CGFunctionInfo &
 CodeGenTypes::arrangeFreeFunctionType(CanQual<FunctionProtoType> FTP) {
   SmallVector<CanQualType, 16> argTypes;
+
+  if (CGM.getLangOpts().DetExceptions && !FTP.isNull() &&
+      FTP.getTypePtr()->canThrow()) {
+    // Add the __exception parameter
+    argTypes.push_back(Context.VoidPtrTy);
+  }
+
   return ::arrangeLLVMFunctionInfo(*this, /*instanceMethod=*/false, argTypes,
                                    FTP);
 }
@@ -257,6 +264,11 @@ CodeGenTypes::arrangeCXXMethodType(const CXXRecordDecl *RD,
   // Add the 'this' pointer.
   argTypes.push_back(DeriveThisType(RD, MD));
 
+  // Add the __exception pointer
+  if (CGM.getLangOpts().DetExceptions && FTP->canThrow()) {
+    argTypes.push_back(Context.VoidPtrTy);
+  }
+
   return ::arrangeLLVMFunctionInfo(
       *this, true, argTypes,
       FTP->getCanonicalTypeUnqualified().getAs<FunctionProtoType>());
@@ -310,6 +322,12 @@ CodeGenTypes::arrangeCXXStructorDeclaration(GlobalDecl GD) {
   SmallVector<CanQualType, 16> argTypes;
   SmallVector<FunctionProtoType::ExtParameterInfo, 16> paramInfos;
   argTypes.push_back(DeriveThisType(MD->getParent(), MD));
+
+  // Add the __exception pointer
+  if (CGM.getLangOpts().DetExceptions &&
+      GetFormalType(MD).getTypePtr()->canThrow()) {
+    argTypes.push_back(Context.VoidPtrTy);
+  }
 
   bool PassParams = true;
 

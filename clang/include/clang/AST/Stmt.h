@@ -312,6 +312,9 @@ protected:
     unsigned ValueKind : 2;
     unsigned ObjectKind : 3;
     unsigned /*ExprDependence*/ Dependent : llvm::BitWidth<ExprDependence>;
+    /// An empty expression is a type of expression which may fill a return
+    /// channel without representing a value.
+    unsigned IsEmpty : 1;
   };
   enum { NumExprBits = NumStmtBits + 5 + llvm::BitWidth<ExprDependence> };
 

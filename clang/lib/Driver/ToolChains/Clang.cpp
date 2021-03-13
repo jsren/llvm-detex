@@ -415,6 +415,7 @@ static void addExceptionArgs(const ArgList &Args, types::ID InputType,
     Args.ClaimAllArgs(options::OPT_fobjc_exceptions);
     Args.ClaimAllArgs(options::OPT_fno_objc_exceptions);
     Args.ClaimAllArgs(options::OPT_fcxx_exceptions);
+    Args.ClaimAllArgs(options::OPT_fdet_exceptions);
     Args.ClaimAllArgs(options::OPT_fno_cxx_exceptions);
     return;
   }
@@ -439,7 +440,8 @@ static void addExceptionArgs(const ArgList &Args, types::ID InputType,
         Triple.getArch() != llvm::Triple::xcore && !Triple.isPS4CPU();
     Arg *ExceptionArg = Args.getLastArg(
         options::OPT_fcxx_exceptions, options::OPT_fno_cxx_exceptions,
-        options::OPT_fexceptions, options::OPT_fno_exceptions);
+        options::OPT_fexceptions, options::OPT_fdet_exceptions,
+        options::OPT_fno_exceptions);
     if (ExceptionArg)
       CXXExceptionsEnabled =
           ExceptionArg->getOption().matches(options::OPT_fcxx_exceptions) ||
@@ -449,6 +451,9 @@ static void addExceptionArgs(const ArgList &Args, types::ID InputType,
       CmdArgs.push_back("-fcxx-exceptions");
 
       EH = true;
+    }
+    if (Args.hasArg(options::OPT_fdet_exceptions)) {
+      CmdArgs.push_back("-fdet_exceptions");
     }
   }
 

@@ -29,6 +29,8 @@ class CXXCatchStmt : public Stmt {
   SourceLocation CatchLoc;
   /// The exception-declaration of the type.
   VarDecl *ExceptionDecl;
+  /// The exception object declaration for deterministic exceptions
+  mutable VarDecl *ObjDecl;
   /// The handler block.
   Stmt *HandlerBlock;
 
@@ -47,6 +49,8 @@ public:
 
   SourceLocation getCatchLoc() const { return CatchLoc; }
   VarDecl *getExceptionDecl() const { return ExceptionDecl; }
+  VarDecl *getObjDecl() const { return ObjDecl; }
+  void setObjDecl(VarDecl *VD) const { ObjDecl = VD; }
   QualType getCaughtType() const;
   Stmt *getHandlerBlock() const { return HandlerBlock; }
 
@@ -75,6 +79,8 @@ class CXXTryStmt final : public Stmt,
   unsigned NumHandlers;
   size_t numTrailingObjects(OverloadToken<Stmt *>) const { return NumHandlers; }
 
+  mutable VarDecl *exceptionState;
+
   CXXTryStmt(SourceLocation tryLoc, Stmt *tryBlock, ArrayRef<Stmt*> handlers);
   CXXTryStmt(EmptyShell Empty, unsigned numHandlers)
     : Stmt(CXXTryStmtClass), NumHandlers(numHandlers) { }
@@ -101,6 +107,13 @@ public:
   }
   const CompoundStmt *getTryBlock() const {
     return cast<CompoundStmt>(getStmts()[0]);
+  }
+
+  VarDecl *getExceptionState() const {
+    return exceptionState;
+  }
+  void setExceptionState(VarDecl *Decl) const {
+    exceptionState = Decl;
   }
 
   unsigned getNumHandlers() const { return NumHandlers; }

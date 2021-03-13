@@ -341,6 +341,26 @@ static bool SemaBuiltinOverflow(Sema &S, CallExpr *TheCall,
   return false;
 }
 
+static bool SemaBuiltinCallReturnEmpty(Sema& S, CallExpr *BuiltinCall) {
+
+  if (BuiltinCall->getNumArgs() > 0) {
+    S.Diag(BuiltinCall->getArg(0)->getBeginLoc(),
+        diag::err_typecheck_call_too_many_args)
+      << 0 << 0 << BuiltinCall->getNumArgs()
+      << BuiltinCall->getCallee()->getSourceRange();
+    return true;
+  }
+
+  NamedDecl *OuterDecl = S.getCurFunctionOrMethodDecl();
+  FunctionDecl *OuterFunc = OuterDecl->getAsFunction();
+  QualType RtnType = OuterFunc->getCallResultType();
+
+  BuiltinCall->setType(RtnType);
+  BuiltinCall->setValueKind(ExprValueKind::VK_RValue);
+  BuiltinCall->setObjectKind(ExprObjectKind::OK_Ordinary);
+  return false;
+}
+
 static bool SemaBuiltinCallWithStaticChain(Sema &S, CallExpr *BuiltinCall) {
   if (checkArgCount(S, BuiltinCall, 2))
     return true;
@@ -1840,6 +1860,11 @@ Sema::CheckBuiltinFunctionCall(FunctionDecl *FDecl, unsigned BuiltinID,
     break;
   case Builtin::BI__builtin_call_with_static_chain:
     if (SemaBuiltinCallWithStaticChain(*this, TheCall))
+      return ExprError();
+    break;
+  case Builtin::BI__builtin_empty_return:
+    TheCall->setEmpty(true);
+    if (SemaBuiltinCallReturnEmpty(*this, TheCall))
       return ExprError();
     break;
   case Builtin::BI__exception_code:

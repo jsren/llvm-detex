@@ -1037,6 +1037,8 @@ CXXConstructExpr::CXXConstructExpr(
   for (unsigned I = 0, N = Args.size(); I != N; ++I) {
     assert(Args[I] && "NULL argument in CXXConstructExpr!");
     TrailingArgs[I] = Args[I];
+    if (Args[I]->isEmpty())
+      ExprBits.IsEmpty = true;
   }
 
   setDependence(computeDependence(this));
@@ -1584,6 +1586,7 @@ MaterializeTemporaryExpr::MaterializeTemporaryExpr(
   }
   State = Temporary;
   setDependence(computeDependence(this));
+  setEmpty(Temporary && Temporary->isEmpty());
 }
 
 void MaterializeTemporaryExpr::setExtendingDecl(ValueDecl *ExtendedBy,

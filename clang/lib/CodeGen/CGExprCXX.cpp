@@ -53,6 +53,10 @@ commonEmitCXXMemberOrOperatorCall(CodeGenFunction &CGF, const CXXMethodDecl *MD,
   }
 
   const FunctionProtoType *FPT = MD->getType()->castAs<FunctionProtoType>();
+  // Emit __exception param as required for deterministic exceptions
+  if (CGF.getLangOpts().DetExceptions && FPT && FPT->canThrow()) {
+    CGF.LoadExceptParam(Args);
+  }
   RequiredArgs required = RequiredArgs::forPrototypePlus(FPT, Args.size());
   unsigned PrefixSize = Args.size() - 1;
 
@@ -465,6 +469,12 @@ CodeGenFunction::EmitCXXMemberPointerCallExpr(const CXXMemberCallExpr *E,
 
   // Push the this ptr.
   Args.add(RValue::get(ThisPtrForCall), ThisType);
+
+  // Add the implicit exception state object (ESO) parameter to the list
+  // of args if enabled
+  if (getLangOpts().DetExceptions && FPT && FPT->canThrow()) {
+    LoadExceptParam(Args);
+  }
 
   RequiredArgs required = RequiredArgs::forPrototypePlus(FPT, 1);
 

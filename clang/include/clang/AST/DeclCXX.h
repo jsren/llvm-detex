@@ -828,6 +828,12 @@ public:
            needsImplicitMoveConstructor();
   }
 
+  /// Determine whether this class has a copy constructor.
+  bool hasCopyConstructor() const {
+    return (data().DeclaredSpecialMembers & SMF_CopyConstructor) ||
+           needsImplicitMoveConstructor();
+  }
+
   /// Set that we attempted to declare an implicit copy
   /// constructor, but overload resolution failed so we deleted it.
   void setImplicitCopyConstructorIsDeleted() {

@@ -120,6 +120,7 @@ public:
 protected:
   Expr(StmtClass SC, QualType T, ExprValueKind VK, ExprObjectKind OK)
       : ValueStmt(SC) {
+    ExprBits.IsEmpty = 0;
     ExprBits.Dependent = 0;
     ExprBits.ValueKind = VK;
     ExprBits.ObjectKind = OK;
@@ -168,6 +169,19 @@ public:
   /// @endcode
   bool isValueDependent() const {
     return static_cast<bool>(getDependence() & ExprDependence::Value);
+  }
+
+  /// Determines whether this expression is empty.
+  ///
+  /// Empty expressions can be used to satisfy a return channel without
+  /// returning a value (for example via \c __builtin_empty_return).
+  bool isEmpty() const {
+    return ExprBits.IsEmpty != 0;
+  }
+
+  /// Set whether this expression is empty
+  void setEmpty(bool isEmpty) {
+    ExprBits.IsEmpty = isEmpty;
   }
 
   /// Determines whether the type of this expression depends on
@@ -3384,6 +3398,7 @@ protected:
   CastExpr(StmtClass SC, QualType ty, ExprValueKind VK, const CastKind kind,
            Expr *op, unsigned BasePathSize)
       : Expr(SC, ty, VK, OK_Ordinary), Op(op) {
+    setEmpty(op && op->isEmpty());
     CastExprBits.Kind = kind;
     CastExprBits.PartOfExplicitCast = false;
     CastExprBits.BasePathSize = BasePathSize;

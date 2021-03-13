@@ -53,8 +53,14 @@ protected:
   ImplicitParamDecl *getThisDecl(CodeGenFunction &CGF) {
     return CGF.CXXABIThisDecl;
   }
+  VarDecl *getExceptDecl(CodeGenFunction &CGF) {
+    return CGF.curExceptDecl();
+  }
   llvm::Value *getThisValue(CodeGenFunction &CGF) {
     return CGF.CXXABIThisValue;
+  }
+  llvm::Value *getExceptValue(CodeGenFunction &CGF) {
+    return CGF.CXXABIExceptValue;
   }
   Address getThisAddress(CodeGenFunction &CGF) {
     return Address(CGF.CXXABIThisValue, CGF.CXXABIThisAlignment);
@@ -77,6 +83,8 @@ protected:
   llvm::Value *loadIncomingCXXThis(CodeGenFunction &CGF);
 
   void setCXXABIThisValue(CodeGenFunction &CGF, llvm::Value *ThisPtr);
+  /// Sets the current exception state object for deterministic C++ exceptions
+  void setCXXABIExceptionValue(CodeGenFunction &CGF, llvm::Value *ExceptionRef);
 
   ASTContext &getContext() const { return CGM.getContext(); }
 
@@ -365,6 +373,9 @@ public:
                                            Address This, bool VirtualCall) {
     return This;
   }
+
+/// Build a parameter variable suitable for '__exception'.
+  void buildExceptionParam(CodeGenFunction &CGF, FunctionArgList &params);
 
   /// Build a parameter variable suitable for 'this'.
   void buildThisParam(CodeGenFunction &CGF, FunctionArgList &Params);

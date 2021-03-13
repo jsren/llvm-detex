@@ -1943,6 +1943,8 @@ RValue CodeGenFunction::EmitBuiltinExpr(const GlobalDecl GD, unsigned BuiltinID,
 
   switch (BuiltinID) {
   default: break;
+  case Builtin::BI__builtin_empty_return:
+    return RValue::getIgnored();
   case Builtin::BI__builtin___CFStringMakeConstantString:
   case Builtin::BI__builtin___NSStringMakeConstantString:
     return RValue::get(ConstantEmitter(*this).emitAbstract(E, E->getType()));

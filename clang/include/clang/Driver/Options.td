@@ -941,6 +941,8 @@ def ferror_limit_EQ : Joined<["-"], "ferror-limit=">, Group<f_Group>, Flags<[Cor
 defm exceptions : OptInFFlag<"exceptions", "Enable", "Disable", " support for exception handling">;
 def fdwarf_exceptions : Flag<["-"], "fdwarf-exceptions">, Group<f_Group>,
   Flags<[CC1Option]>, HelpText<"Use DWARF style exceptions">;
+def det_exceptions : Flag<["-"], "fdet-exceptions">, Group<f_Group>, Flags<[CC1Option]>,
+  HelpText<"Enable support for C++ deterministic exception handling">;
 def fsjlj_exceptions : Flag<["-"], "fsjlj-exceptions">, Group<f_Group>,
   Flags<[CC1Option]>, HelpText<"Use SjLj style exceptions">;
 def fseh_exceptions : Flag<["-"], "fseh-exceptions">, Group<f_Group>,

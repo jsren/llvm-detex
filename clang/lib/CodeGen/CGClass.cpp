@@ -2085,6 +2085,13 @@ void CodeGenFunction::EmitCXXConstructorCall(const CXXConstructorDecl *D,
     return;
   }
 
+  // Add the implicit exception state object (ESO) parameter to the list
+  // of args if enabled
+  const FunctionProtoType *FPT = D->getType()->castAs<FunctionProtoType>();
+  if (getLangOpts().DetExceptions && FPT && FPT->canThrow()) {
+    LoadExceptParam(Args);
+  }
+
   // Add the rest of the user-supplied arguments.
   const FunctionProtoType *FPT = D->getType()->castAs<FunctionProtoType>();
   EvaluationOrder Order = E->isListInitialization()
@@ -2179,6 +2186,12 @@ void CodeGenFunction::EmitCXXConstructorCall(const CXXConstructorDecl *D,
   const CGFunctionInfo &Info = CGM.getTypes().arrangeCXXConstructorCall(
       Args, D, Type, ExtraArgs.Prefix, ExtraArgs.Suffix, PassPrototypeArgs);
   CGCallee Callee = CGCallee::forDirect(CalleePtr, GlobalDecl(D, Type));
+
+  const FunctionProtoType *FPT = D->getType()->castAs<FunctionProtoType>();
+  if (getLangOpts().DetExceptions && FPT && FPT->canThrow()) {
+    Callee.hasExceptParam = true;
+  }
+
   EmitCall(Info, Callee, ReturnValueSlot(), Args, nullptr, Loc);
 
   // Generate vtable assumptions if we're constructing a complete object
@@ -2329,6 +2342,12 @@ CodeGenFunction::EmitSynthesizedCXXCopyCtorCall(const CXXConstructorDecl *D,
 
   // Push the this ptr.
   Args.add(RValue::get(This.getPointer()), D->getThisType());
+
+  // Add the implicit exception state object (ESO) parameter to the list
+  // of args if enabled
+  if (getLangOpts().DetExceptions && FPT && FPT->canThrow()) {
+    LoadExceptParam(Args);
+  }
 
   // Push the src ptr.
   QualType QT = *(FPT->param_type_begin());

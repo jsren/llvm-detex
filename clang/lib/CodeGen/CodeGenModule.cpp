@@ -1508,6 +1508,8 @@ static bool hasUnwindExceptions(const LangOptions &LangOpts) {
   // If exceptions are completely disabled, obviously this is false.
   if (!LangOpts.Exceptions) return false;
 
+  if (LangOpts.DetExceptions) return false;
+
   // If C++ exceptions are enabled, this is true.
   if (LangOpts.CXXExceptions) return true;
 
@@ -2665,6 +2667,46 @@ void CodeGenModule::EmitGlobal(GlobalDecl GD) {
     // DeferredDeclsToEmit.
     DeferredDecls[MangledName] = GD;
   }
+}
+
+llvm::Constant *CodeGenModule::EmitExceptionThunk(GlobalDecl GD, llvm::Constant *Callee)
+{
+  // This thunk will simply take (and ignore) an additional __exception parameter
+  // in order to provide a common call signature for throws and non-throws functions
+  const FunctionDecl *FD = dyn_cast_or_null<FunctionDecl>(
+    GD.getDecl())->getCanonicalDecl();
+
+  const FunctionProtoType *FPT = FD->getType()->castAs<FunctionProtoType>();
+  const CXXConstructorDecl *CD = dyn_cast_or_null<CXXConstructorDecl>(FD);
+
+  if (getLangOpts().DetExceptions && (!FPT || FPT->canThrow()))
+  {
+    std::string Name = getMangledName(GD).str() + ".throws";
+
+    const CGFunctionInfo *FI;
+    if (CD)
+      FI = &Types.arrangeCXXStructorDeclaration(
+                     CD, getFromCtorType(GD.getCtorType()), /*ForceThrows=*/true);
+    else
+      FI = &Types.arrangeFunctionDeclaration(FD, /*ForceThrows=*/true);
+
+
+    llvm::Type *T = Types.GetFunctionType(*FI);
+    llvm::Constant *FP = GetOrCreateLLVMFunction(Name, T, GD, /*ForVTable=*/true,
+                            /*DontDefer=*/true, /*IsThunk=*/false);
+
+    auto *Fn = cast<llvm::Function>(FP);
+    Fn->setLinkage(llvm::GlobalValue::PrivateLinkage);
+
+    // Generate as necessary
+    if (Fn->isDeclaration()) {
+      CodeGenFunction(*this).GenerateExceptionThunk(GD, Fn, *FI, Callee, 1);
+    }
+    //setFunctionLinkage(GD, Fn);
+    // Assume exception is 2nd arg
+    return FP;
+  }
+  else return nullptr;
 }
 
 // Check if T is a class type with a destructor that's not dllimport.
